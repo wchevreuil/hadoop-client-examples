@@ -1,15 +1,13 @@
 package hbase.client;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HTable;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.ResultScanner;
-import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.util.Bytes;
 
 
@@ -36,7 +34,13 @@ public class HBaseClient {
 
       long end = Long.parseLong(args[3]);
 
-      String[] columns = Arrays.copyOfRange(args, 4, args.length);
+//      String[] columns = Arrays.copyOfRange(args, 4, args.length);
+
+      String[] columns = new String[Integer.parseInt(args[4])];
+
+      for(int i=0; i<columns.length; i++){
+        columns[i] = "cf:" + i;
+      }
 
       (new HBaseClient()).bulkInsertData(tableName, columns, start, end);
 
@@ -95,27 +99,32 @@ public class HBaseClient {
       // while (true) {
       HTable table = new HTable(config, tableName);
 
-       for (long i = root; i < total; i++) {
+      List<Put> puts = new ArrayList<>();
+
+      for (long i = root; i < total; i++) {
          
-        Put put = new Put(Bytes.toBytes("\n" + i + "\n"));
+//        Put put = new Put(Bytes.toBytes("\n" + i + "\n"));
          
          for(String cellDesc : familyQualifiers){
-           
+
+           Put put = new Put(Bytes.toBytes("\n" + i + "\n"));
+
            String[] familyQualifier =  cellDesc.split(":");
            
            System.out.println(">>>> Adding row: test-" +  i + "; cell: " + cellDesc );
            
-           put.add(Bytes.toBytes(familyQualifier[0]), Bytes.toBytes(familyQualifier[1]), Bytes.toBytes("val-" + i));
+           put.add(Bytes.toBytes(familyQualifier[0]), Bytes.toBytes(familyQualifier[1]), Bytes.toBytes("val-" + i + "-cell: " + cellDesc));
            
-           table.put(put);
-           
+//           table.put(put);
+
+           puts.add(put);
          }
          
        }
-       
+       table.batch(puts);
       table.close();
        
-    } catch (IOException e) {
+    } catch (Exception e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
     }
